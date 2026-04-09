@@ -1,0 +1,60 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    environment:
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=https://onyagents.duckdns.org/
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=ony
+      - N8N_BASIC_AUTH_PASSWORD=Feinmann123.
+      - N8N_ENCRYPTION_KEY=wQSZ1/o0s2zlz8U2OkmY+kIBE0Y0VDJo
+      - N8N_SECURE_COOKIE=true
+    volumes:
+      - /home/ony/agent-workspace:/files
+      - /home/ony/.n8n:/home/node/.n8n
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - proxy_net
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - proxy_net
+
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:81:81"
+    volumes:
+      - /home/ony/npm/data:/data
+      - /home/ony/npm/letsencrypt:/etc/letsencrypt
+    restart: unless-stopped
+    networks:
+      - proxy_net
+
+volumes:
+  ollama:
+    external: true
+    name: ollama
+
+networks:
+  proxy_net:
+    external: true
+    name: proxy_net
