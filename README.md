@@ -34,6 +34,8 @@ No infrastructure costs (runs on your own machine)
 * 🌐 Reverse proxy with Nginx Proxy Manager
 * 🧱 Docker-based deployment
 * 🔒 Hardened network exposure
+* 🏠 **NEW:** Home automation via Alexa Remote API
+* 🎛️ **NEW:** Smart device control (lights, routines, voice commands)
 
 ---
 
@@ -141,6 +143,7 @@ Enable smarter decision-making
 
 * n8n (workflow automation)
 * Ollama (local LLM)
+* Alexa Remote API (smart home integration)
 * Nginx Proxy Manager (reverse proxy)
 * Docker / Docker Compose
 * Telegram Bot API
@@ -161,8 +164,34 @@ cd ony-agents/docker
 ### 2. Configure environment
 
 ```bash
-cp ../.env.example .env
+cp .env.example .env
+# Edit with your actual values
 nano .env
+```
+
+**IMPORTANT - Security Update:**
+
+All sensitive credentials are now externalized to `.env` files:
+
+- **Root .env** (`/root/.env`): Master environment configuration
+- **Docker .env** (`docker/.env`): Synced copy for docker-compose
+- **Both files are gitignored** - never committed to repository
+
+**Critical fields:**
+
+```env
+# Encryption Key - CHANGE THIS FOR SECURITY
+# Generate new key with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+N8N_ENCRYPTION_KEY=<your-32-byte-base64-key>
+
+# Authentication
+N8N_BASIC_AUTH_USER=your_user
+N8N_BASIC_AUTH_PASSWORD=your_secure_password
+
+# REQUIRED: Fill in your values
+WEBHOOK_URL=https://your-domain.duckdns.org
+N8N_PORT=5678
+N8N_HOST=0.0.0.0
 ```
 
 Fill required variables:
@@ -187,6 +216,95 @@ WEBHOOK_URL=https://your-domain.duckdns.org
 
 ```bash
 docker compose up -d
+```
+
+---
+
+## 🏠 Home Automation Setup (NEW)
+
+### Alexa Remote Integration
+
+The system now supports controlling Amazon Alexa devices and smart home devices.
+
+#### Installation
+
+1. **Dockerfile Extension**: The n8n container automatically includes the Alexa Remote node:
+
+```dockerfile
+# docker/Dockerfile.n8n
+FROM docker.n8n.io/n8nio/n8n:latest
+RUN npm install -g @ac-codeprod/n8n-nodes-alexa-remote
+```
+
+2. **Environment Configuration**: All sensitive credentials are now managed via `.env` files:
+
+```bash
+# Root .env file (NOT committed to repo)
+# Managed in docker/.env and synced from root
+N8N_ENCRYPTION_KEY=<your-secure-key>
+N8N_BASIC_AUTH_PASSWORD=<your-secure-password>
+```
+
+#### Alexa Authentication
+
+**Step-by-step authentication:**
+
+1. Open n8n workflow UI at `http://localhost:3456`
+2. Create or edit a credential for **"Alexa Remote account"**
+3. Click the **"Authenticate"** button in the Connection tab
+4. A browser window will open for Amazon login
+5. Complete login with your **Amazon account** credentials
+6. Grant access permissions when prompted
+7. The system will automatically save authentication cookies to:
+   ```
+   /home/ony/.n8n/alexa-cookie.json
+   ```
+
+**Troubleshooting:**
+- If cookies file is not created: Click **Retry** after authentication
+- If connection fails: Ensure your Amazon account doesn't have 2FA or disable it temporarily
+- Cookie path: `docker/.env` volume mounts `/home/ony/.n8n` for persistence
+
+#### Available Actions
+
+The Alexa Remote node supports:
+
+- **Text Command**: Send voice commands to Alexa devices
+  - Examples: "Enciende las luces de la sala", "Pon música jazz"
+- **Device Control**: Target specific devices or device groups
+- **Interactions**: Text commands, Device control, Routines
+
+### Workflow Changes
+
+The **agent-core workflow** now includes:
+
+1. **Telegram Trigger** → Receives user message
+2. **Ollama Agent** → Processes request with LLM
+   - Returns JSON with action type: `control_alexa`, `execute_command`, or `answer`
+3. **Switch Node** → Routes based on action type:
+   - `control_alexa` → Alexa Remote node
+   - `execute_command` → Command execution
+   - `answer` → Text response
+4. **Alexa Remote Node** → Sends commands to smart devices
+   - Supports groups (sends to multiple devices)
+   - Returns success status for each device
+5. **Consolidation Node** → Combines multiple device responses
+   - Formats multiple device confirmations into single Telegram message
+6. **Telegram Response** → Sends result back to user
+
+**Example Flow:**
+```
+User: "Apaga las luces de la sala"
+  ↓
+Ollama: {"action": "control_alexa", "command": "Apaga las luces de la sala", "message": "..."}
+  ↓
+Alexa Remote: Sends to all Alexa devices
+  ↓
+Response: 2 items (multiple devices executed successfully)
+  ↓
+Consolidation: Combines into single message
+  ↓
+Telegram: "✅ Comando ejecutado en 2 dispositivos"
 ```
 
 ---
@@ -287,13 +405,66 @@ ony-agents/
 
 ---
 
-## 🔮 Future Improvements
+## � Troubleshooting
+
+### Encryption Key Issues
+
+**Problem:** "Mismatching encryption keys" error on n8n startup
+
+**Solution:**
+1. The encryption key was rotated for security (credentials were exposed)
+2. Delete the old n8n config: `rm -rf /home/ony/.n8n/config`
+3. Restart containers: `docker compose restart n8n`
+4. Reconfigure all credentials in n8n UI (old encrypted data cannot be recovered)
+
+**To generate a new safe encryption key:**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### Alexa Authentication Issues
+
+**Problem:** "No cookie file found" when connecting to Alexa Remote
+
+**Solution:**
+1. Ensure you clicked the **"Authenticate"** button in the Alexa Remote credential window
+2. Complete the full Amazon login flow
+3. Wait for cookies file to be created at `/home/ony/.n8n/alexa-cookie.json`
+4. Click **"Retry"** if connection still fails
+
+**Problem:** Multiple device responses in workflow
+
+**Solution:**
+- This is normal when targeting device groups
+- Use a **Code node** to consolidate responses before sending to Telegram
+- See "Workflow Changes" section for consolidation example
+
+### Container Startup Issues
+
+**Problem:** n8n container fails to start
+
+1. Check logs: `docker logs n8n`
+2. Verify `.env` files exist in both root and `docker/` folders
+3. Ensure `docker-compose.yml` has correct `env_file` path
+4. Rebuild: `docker compose up --build -d`
+
+**Problem:** Ollama not accessible from n8n
+
+- Ollama runs in the same Docker network, use: `http://ollama:11434`
+- Not `http://localhost:11434`
+
+---
+
+## �🔮 Future Improvements
 
 * Role-based access control
 * Audit logging
 * Multi-agent orchestration
 * Cloudflare / Zero Trust access
-* Alexa secure integration via webhook
+* Enhanced Alexa integration (routines automation, device discovery)
+* Additional smart home platforms (Google Home, Home Assistant)
+* Workflow versioning and rollback
+* Performance metrics and monitoring
 
 ---
 

@@ -50,6 +50,29 @@
                 ],
                 "combinator": "and"
               }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6cd3f72c-2792-48c5-95c4-b9639d43a829",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "control_alexa",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
             }
           ]
         },
@@ -58,8 +81,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        544,
-        -480
+        256,
+        -496
       ],
       "id": "ac131687-80a0-4ad9-9390-ce323c8c6173",
       "name": "Switch"
@@ -71,7 +94,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        272,
+        80,
         -480
       ],
       "id": "57f2992a-4bb2-410c-920a-2dd8b57c2e11",
@@ -141,7 +164,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        16,
+        -80,
         -480
       ],
       "id": "4dd8aa8b-d3aa-49ab-ac61-28a2c7d609f9",
@@ -156,8 +179,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        832,
-        -768
+        704,
+        -688
       ],
       "id": "1d9f96c9-c9d9-4675-ac8d-b2d4bb3e0dff",
       "name": "Send a text message1",
@@ -165,7 +188,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "",
+          "id": "Lfxg4ktTomSveb30",
           "name": "Telegram account"
         }
       }
@@ -188,7 +211,7 @@
       "alwaysOutputData": false,
       "credentials": {
         "telegramApi": {
-          "id": "",
+          "id": "Lfxg4ktTomSveb30",
           "name": "Telegram account"
         }
       }
@@ -204,14 +227,14 @@
       "typeVersion": 1.2,
       "position": [
         -1744,
-        -544
+        -528
       ],
       "id": "8eb0b3a0-29ea-4241-a386-e00231d46839",
       "name": "Telegram Trigger",
       "webhookId": "25bde3bf-1a06-4047-b813-83d7991399f5",
       "credentials": {
         "telegramApi": {
-          "id": "",
+          "id": "Lfxg4ktTomSveb30",
           "name": "Telegram account"
         }
       }
@@ -219,7 +242,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Eres un agente de automatización con acceso a la terminal Bash de la PC del usuario. Tu objetivo es traducir las peticiones del usuario en comandos precisos de sistema.\n\nContexto actual del sistema (Memoria):\n{{$json[\"memory\"]}}\n\nDebes responder ÚNICAMENTE con JSON válido.\n\nAcciones disponibles:\n1. \"execute_command\": Úsala cuando el usuario pida realizar una acción técnica, abrir programas, gestionar archivos o consultar el estado del sistema. Requiere el campo \"command\".\n2. \"answer\": Úsala para conversaciones generales o cuando la acción solicitada ya se haya cumplido.\n\nReglas de ejecución:\n- Eres libre de generar cualquier comando de Bash que sea necesario para cumplir la tarea.\n- Si el usuario pide \"Modo creativo\", el comando correcto es: bash -lc 'scripts/studio-one-start.sh'.\n- Usa el contexto de \"memory\" para evitar ejecutar comandos redundantes (ej. no abras algo que ya está marcado como status: \"open\").\n- El campo \"message\" debe explicar brevemente qué vas a hacer en lenguaje natural.\n\nEstructura obligatoria del JSON:\n{\n  \"action\": \"execute_command\" | \"answer\",\n  \"command\": \"el comando de bash aquí\",\n  \"message\": \"explicación para el usuario\"\n}\n\nRestricciones:\n- No inventes explicaciones fuera del JSON.\n- Si el usuario hace una pregunta que no requiere ejecución, usa la acción \"answer\" y deja el campo \"command\" vacío o como null.\n\nMensaje del usuario:\n{{ $('Telegram Trigger').item.json.message.text }}",
+        "text": "=Eres un agente de automatización y cerebro central con acceso a la terminal Bash de la PC del usuario y al sistema de casa inteligente Alexa. Tu objetivo es traducir las peticiones del usuario en acciones precisas para el dispositivo correspondiente.\n\n\n\nDebes responder ÚNICAMENTE con JSON válido.\n\n\n\nAcciones disponibles:\n\n1. \"execute_command\": Úsala para acciones en la PC (abrir programas, scripts, archivos). Requiere el campo \"command\" con código Bash.\n\n2. \"control_alexa\": Úsala para controlar dispositivos de casa inteligente, luces, rutinas o pedirle a Alexa que diga algo. Requiere el campo \"command\" con la instrucción en lenguaje natural para Alexa.\n\n3. \"answer\": Úsala para conversaciones generales o aclaraciones.\n\n\n\nReglas de ejecución:\n\n- Para la PC: Eres libre de generar cualquier comando de Bash. Si piden \"Modo creativo\", usa: bash -lc 'scripts/studio-one-start.sh'.\n\n- Para Alexa: Eres libre de generar cualquier comando de voz que Alexa entienda (ej. \"enciende la luz\", \"pon música jazz\", \"dime el clima\").\n\n- El campo \"message\" debe ser una respuesta natural indicando qué acción estás tomando.\n\n\n\nEstructura obligatoria del JSON:\n\n{\n\n  \"action\": \"execute_command\" | \"control_alexa\" | \"answer\",\n\n  \"command\": \"comando de bash O instrucción para Alexa\",\n\n  \"message\": \"explicación natural para el usuario\"\n\n}\n\n\n\nRestricciones:\n\n- No inventes explicaciones fuera del JSON.\n\n- Si la petición no requiere una acción técnica, usa \"answer\".\n\n- Identifica el dispositivo correcto: si mencionas \"luces\", \"casa\", \"clima\" o \"rutinas\", usa \"control_alexa\". Si mencionas \"archivos\", \"Studio One\", o comandos técnicos, usa \"execute_command\".\n\n\n\nMensaje del usuario:\n\n{{ $('Telegram Trigger').item.json.message.text }}",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -247,7 +270,7 @@
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
-          "id": "",
+          "id": "RnkvHiVkHonlRa7P",
           "name": "Ollama account"
         }
       }
@@ -361,27 +384,6 @@
     },
     {
       "parameters": {
-        "authentication": "privateKey",
-        "command": "bash -lc 'cat n8n/memory/agent-memory.json'",
-        "cwd": "//mnt/agentsdisk/Projex/home-automation-agent/"
-      },
-      "type": "n8n-nodes-base.ssh",
-      "typeVersion": 1,
-      "position": [
-        -1296,
-        -544
-      ],
-      "id": "c36c3d18-d7ef-4eb5-a3b8-24dafcc48966",
-      "name": "Execute a command1",
-      "credentials": {
-        "sshPrivateKey": {
-          "id": "",
-          "name": "SSH Password account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -397,7 +399,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1136,
+        -1264,
         -544
       ],
       "id": "8160438e-83f3-4a47-be2f-ebf99664d258",
@@ -412,8 +414,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        992,
-        -464
+        896,
+        -480
       ],
       "id": "734352e1-a120-4ee0-a000-43bdb7742ac2",
       "name": "Send a text message3",
@@ -421,7 +423,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "",
+          "id": "Lfxg4ktTomSveb30",
           "name": "Telegram account"
         }
       }
@@ -435,17 +437,74 @@
       "type": "n8n-nodes-base.ssh",
       "typeVersion": 1,
       "position": [
-        752,
-        -464
+        688,
+        -480
       ],
       "id": "3bea702e-c6d9-4def-b53a-a217d4f2c49b",
       "name": "Execute a command4",
       "credentials": {
         "sshPrivateKey": {
-          "id": "",
+          "id": "vBqd2yEOMgsgMz6I",
           "name": "SSH Password account"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "textCommand",
+        "device": "d321c554c9954b718d3697e3ad5a235c",
+        "text": "={{ $json.command }}"
+      },
+      "type": "@ac-codeprod/n8n-nodes-alexa-remote.alexaRemote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -224
+      ],
+      "id": "2514e167-294a-449b-a926-06d955df6b5d",
+      "name": "Send text command",
+      "credentials": {
+        "alexaRemoteApi": {
+          "id": "HnpdrOLsCF7c7nXo",
+          "name": "Alexa Remote account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $json.consolidated_message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        -224
+      ],
+      "id": "ce016419-0001-4d95-aa69-ee4cc7492bd6",
+      "name": "Send a text message",
+      "webhookId": "c0359265-039d-4314-b22b-4b63853ddbea",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "Lfxg4ktTomSveb30",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = items.map(item => item.json);\n\n// Consolida los resultados\nconst message = `✅ Comando ejecutado con éxito.\\n\\n` +\n  results.map((r, i) => \n    `Dispositivo ${i + 1}:\\n` +\n    `• Salida: ${r.stdout || 'Sin salida'}\\n` +\n    `• Estado: ${r.stderr || 'Completado'}`\n  ).join('\\n\\n');\n\nreturn { consolidated_message: message };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -224
+      ],
+      "id": "d7a3bfe7-cf5a-407b-81c6-23d26c837199",
+      "name": "Code in JavaScript1"
     }
   ],
   "pinData": {},
@@ -462,6 +521,13 @@
         [
           {
             "node": "Execute a command4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send text command",
             "type": "main",
             "index": 0
           }
@@ -589,7 +655,7 @@
       "main": [
         [
           {
-            "node": "Execute a command1",
+            "node": "Edit Fields2",
             "type": "main",
             "index": 0
           }
@@ -597,17 +663,6 @@
         [
           {
             "node": "Stop and Error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute a command1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields2",
             "type": "main",
             "index": 0
           }
@@ -635,6 +690,33 @@
           }
         ]
       ]
+    },
+    "Send a text message1": {
+      "main": [
+        []
+      ]
+    },
+    "Send text command": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -642,10 +724,10 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "8d376f00-7d2d-4aac-b140-e73098e1ed7d",
+  "versionId": "a2be155f-74ad-45ff-ad9c-8ac7eb913d22",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "1c35b97225c8a39e55318cc23e58ce05625d02597a117f9c4d9642ef7a88e98c"
+    "instanceId": "7a482bbc01f022154ff1157065a678647f2e6bc9538a846ec991e08c99a201d9"
   },
   "id": "ctvCrdSyZpQOCdj4",
   "tags": []
