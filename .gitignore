@@ -1,0 +1,8 @@
+.env
+*.log
+node_modules/
+.n8n/
+*.key
+*.pem
+*.env
+*.sqlite
