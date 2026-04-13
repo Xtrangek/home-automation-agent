@@ -15,13 +15,14 @@
                 },
                 "conditions": [
                   {
+                    "id": "0374a42e-cf49-4729-bbf3-c6b4b9d637b0",
                     "leftValue": "={{$json.action}}",
-                    "rightValue": "open_studioone",
+                    "rightValue": "answer",
                     "operator": {
                       "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "f2ad1328-bacd-49ee-90ec-9a0d71743760"
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -37,9 +38,9 @@
                 },
                 "conditions": [
                   {
-                    "id": "0374a42e-cf49-4729-bbf3-c6b4b9d637b0",
-                    "leftValue": "={{$json.action}}",
-                    "rightValue": "answer",
+                    "id": "a5a6845d-c739-420a-8296-6eedfcb573ac",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "execute_command",
                     "operator": {
                       "type": "string",
                       "operation": "equals",
@@ -57,21 +58,21 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        672,
-        240
+        544,
+        -480
       ],
       "id": "ac131687-80a0-4ad9-9390-ce323c8c6173",
       "name": "Switch"
     },
     {
       "parameters": {
-        "jsCode": "const raw = $json.llm_response;\n\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  parsed = {\n    action: 'answer',\n    message: 'No pude interpretar correctamente la instrucción.'\n  };\n}\n\nreturn [\n  {\n    json: {\n      ...parsed,\n      chat_id: $json.chat_id\n    }\n  }\n];"
+        "jsCode": "// ==========================\n// 1. PARSEAR RESPUESTA DEL LLM\n// ==========================\nconst raw = $json.llm_response;\n\nlet parsed;\ntry {\n  // Intentamos limpiar la respuesta por si el LLM incluye backticks de markdown\n  const cleanRaw = raw.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleanRaw);\n} catch (e) {\n  parsed = {\n    action: 'answer',\n    command: null,\n    message: 'Error al parsear la respuesta del agente: ' + raw\n  };\n}\n\n// ==========================\n// 2. PROCESAR MEMORIA\n// ==========================\nconst memoryRaw = $json.memory;\nlet memory;\n\ntry {\n  if (typeof memoryRaw === \"string\") {\n    memory = JSON.parse(memoryRaw);\n  } else {\n    memory = memoryRaw;\n  }\n} catch (e) {\n  memory = {\n    last_app: null,\n    last_action: null,\n    status: \"idle\",\n    mode: \"normal\"\n  };\n}\n\n// ==========================\n// 3. LOGICA DE COMANDO DINÁMICO\n// ==========================\n// Aseguramos que 'command' exista para que el nodo SSH no falle\nconst finalCommand = parsed.command || null;\n\n// ==========================\n// 4. RETURN FINAL (UNIFICADO)\n// ==========================\nreturn [\n  {\n    json: {\n      action: parsed.action || 'answer',\n      command: finalCommand,\n      message: parsed.message || '',\n      memory: memory,\n      chat_id: $json.chat_id\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        96,
-        352
+        272,
+        -480
       ],
       "id": "57f2992a-4bb2-410c-920a-2dd8b57c2e11",
       "name": "Code in JavaScript"
@@ -111,8 +112,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -304,
-        240
+        -608,
+        -80
       ],
       "id": "dd3ca34a-3932-4f49-b260-06ba614bcb29",
       "name": "Edit Fields"
@@ -140,34 +141,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        32,
-        64
+        16,
+        -480
       ],
       "id": "4dd8aa8b-d3aa-49ab-ac61-28a2c7d609f9",
       "name": "Edit Fields1"
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "Modo creativo activado (: ",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        1296,
-        -192
-      ],
-      "id": "0e045e81-f5ee-4bd3-81be-4337d282e63e",
-      "name": "Send a text message",
-      "webhookId": "c0359265-039d-4314-b22b-4b63853ddbea",
-      "alwaysOutputData": true,
-      "credentials": {
-        "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
-          "name": "Telegram account"
-        }
-      }
     },
     {
       "parameters": {
@@ -178,8 +156,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1088,
-        272
+        832,
+        -768
       ],
       "id": "1d9f96c9-c9d9-4675-ac8d-b2d4bb3e0dff",
       "name": "Send a text message1",
@@ -187,7 +165,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "",
           "name": "Telegram account"
         }
       }
@@ -201,8 +179,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -560,
-        192
+        -768,
+        -256
       ],
       "id": "670683f9-4926-4769-9fb9-a5a34dd64171",
       "name": "Send a text message2",
@@ -210,7 +188,7 @@
       "alwaysOutputData": false,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "",
           "name": "Telegram account"
         }
       }
@@ -225,15 +203,15 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1040,
-        128
+        -1744,
+        -544
       ],
       "id": "8eb0b3a0-29ea-4241-a386-e00231d46839",
       "name": "Telegram Trigger",
       "webhookId": "25bde3bf-1a06-4047-b813-83d7991399f5",
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "",
           "name": "Telegram account"
         }
       }
@@ -241,17 +219,18 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Eres un agente local que controla acciones permitidas en la PC del usuario. Debes responder únicamente con JSON válido.\\n\\nAcciones permitidas:\\n- open_studioone\\n- answer\\n\\nReglas:\\n- Si el usuario pide modo creativo, responde exactamente: {\\\"action\\\":\\\"open_studioone\\\"}\\n- Si el usuario solo pregunta o pide otra cosa, responde: {\\\"action\\\":\\\"answer\\\",\\\"message\\\":\\\"...\\\"}\\n- No agregues texto fuera del JSON.\\n\\nMensaje del usuario: {{ $('Telegram Trigger').item.json.message.text }}\"",
+        "text": "=Eres un agente de automatización con acceso a la terminal Bash de la PC del usuario. Tu objetivo es traducir las peticiones del usuario en comandos precisos de sistema.\n\nContexto actual del sistema (Memoria):\n{{$json[\"memory\"]}}\n\nDebes responder ÚNICAMENTE con JSON válido.\n\nAcciones disponibles:\n1. \"execute_command\": Úsala cuando el usuario pida realizar una acción técnica, abrir programas, gestionar archivos o consultar el estado del sistema. Requiere el campo \"command\".\n2. \"answer\": Úsala para conversaciones generales o cuando la acción solicitada ya se haya cumplido.\n\nReglas de ejecución:\n- Eres libre de generar cualquier comando de Bash que sea necesario para cumplir la tarea.\n- Si el usuario pide \"Modo creativo\", el comando correcto es: bash -lc 'scripts/studio-one-start.sh'.\n- Usa el contexto de \"memory\" para evitar ejecutar comandos redundantes (ej. no abras algo que ya está marcado como status: \"open\").\n- El campo \"message\" debe explicar brevemente qué vas a hacer en lenguaje natural.\n\nEstructura obligatoria del JSON:\n{\n  \"action\": \"execute_command\" | \"answer\",\n  \"command\": \"el comando de bash aquí\",\n  \"message\": \"explicación para el usuario\"\n}\n\nRestricciones:\n- No inventes explicaciones fuera del JSON.\n- Si el usuario hace una pregunta que no requiere ejecución, usa la acción \"answer\" y deja el campo \"command\" vacío o como null.\n\nMensaje del usuario:\n{{ $('Telegram Trigger').item.json.message.text }}",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -320,
-        -288
+        -368,
+        -480
       ],
       "id": "b0ea7b0d-0f5a-4169-a80b-916d43278ef6",
-      "name": "AI Agent"
+      "name": "AI Agent",
+      "alwaysOutputData": false
     },
     {
       "parameters": {
@@ -261,14 +240,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -688,
+        -368,
         -256
       ],
       "id": "14185a51-1443-48cf-9e3f-4911c78b1c51",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
-          "id": "RnkvHiVkHonlRa7P",
+          "id": "",
           "name": "Ollama account"
         }
       }
@@ -281,41 +260,21 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -640,
-        -16
+        -272,
+        -64
       ],
       "id": "0ac4f23a-1d62-4962-a7a9-9950ad20b535",
       "name": "Simple Memory"
     },
     {
       "parameters": {
-        "authentication": "privateKey",
-        "command": "=bash -lc '/mnt/agentsdisk/Projex/agents/studio-one-start.sh'"
-      },
-      "type": "n8n-nodes-base.ssh",
-      "typeVersion": 1,
-      "position": [
-        1072,
-        -192
-      ],
-      "id": "2979a2df-d40a-4ea9-88ea-50190e490f8c",
-      "name": "Execute a command",
-      "credentials": {
-        "sshPrivateKey": {
-          "id": "vBqd2yEOMgsgMz6I",
-          "name": "SSH Password account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const staticData = $getWorkflowStaticData('global');\n\nconst chatId = $json.message.chat.id.toString();\nconst now = Date.now();\n\n// cambia este valor a lo que quieras\nconst timeoutMs = 15 * 60 * 1000; // 15 minutos\n\nif (!staticData.lastSeenByChat) {\n  staticData.lastSeenByChat = {};\n}\n\nconst lastSeen = staticData.lastSeenByChat[chatId] || 0;\nconst sendGreeting = (now - lastSeen) > timeoutMs;\n\n// actualizamos la última actividad\nstaticData.lastSeenByChat[chatId] = now;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      sendGreeting,\n      chat_id: $json.message.chat.id,\n      sessionKey: chatId,\n    }\n  }\n];"
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\n\n// 🔥 obtener chat_id correctamente\nconst chatId = $node[\"Telegram Trigger\"].json[\"message\"][\"chat\"][\"id\"].toString();\n\nconst now = Date.now();\nconst timeoutMs = 15 * 60 * 1000;\n\nif (!staticData.lastSeenByChat) {\n  staticData.lastSeenByChat = {};\n}\n\nconst lastSeen = staticData.lastSeenByChat[chatId] || 0;\nconst sendGreeting = (now - lastSeen) > timeoutMs;\n\n// actualizar última interacción\nstaticData.lastSeenByChat[chatId] = now;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      sendGreeting,\n      chat_id: chatId,\n      sessionKey: chatId\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -880,
-        384
+        -976,
+        -544
       ],
       "id": "4b530133-8943-4898-828b-e6a5c4f8a07a",
       "name": "Greeting Gate"
@@ -348,11 +307,145 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -704,
-        432
+        -928,
+        -96
       ],
       "id": "b619927e-28fa-4843-8087-fc12cce9e3e3",
       "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a4fb1393-d09d-41b4-b4ba-3ece6d403ab7",
+              "leftValue": "={{ $json.message.chat.id }}",
+              "rightValue": "={{7983544755}}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1568,
+        -528
+      ],
+      "id": "4ffcf8da-b60e-4c96-899c-93031b9cb917",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "errorMessage": "No"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        -256
+      ],
+      "id": "c26c1f26-cdd5-47e2-91fa-9a72e0731e54",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "bash -lc 'cat n8n/memory/agent-memory.json'",
+        "cwd": "//mnt/agentsdisk/Projex/home-automation-agent/"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        -544
+      ],
+      "id": "c36c3d18-d7ef-4eb5-a3b8-24dafcc48966",
+      "name": "Execute a command1",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "",
+          "name": "SSH Password account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff5379fa-b2e6-4d18-a5bb-86bbc5d53372",
+              "name": "memory",
+              "value": "={{ JSON.parse($json[\"stdout\"]) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1136,
+        -544
+      ],
+      "id": "8160438e-83f3-4a47-be2f-ebf99664d258",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $json.stdout || $json.stderr || \"Comando ejecutado con éxito.\" }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        -464
+      ],
+      "id": "734352e1-a120-4ee0-a000-43bdb7742ac2",
+      "name": "Send a text message3",
+      "webhookId": "c0359265-039d-4314-b22b-4b63853ddbea",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "privateKey",
+        "command": "={{ $json.command }}",
+        "cwd": "/mnt/agentsdisk/Projex/home-automation-agent/"
+      },
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -464
+      ],
+      "id": "3bea702e-c6d9-4def-b53a-a217d4f2c49b",
+      "name": "Execute a command4",
+      "credentials": {
+        "sshPrivateKey": {
+          "id": "",
+          "name": "SSH Password account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -361,14 +454,14 @@
       "main": [
         [
           {
-            "node": "Execute a command",
+            "node": "Send a text message1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send a text message1",
+            "node": "Execute a command4",
             "type": "main",
             "index": 0
           }
@@ -423,7 +516,7 @@
       "main": [
         [
           {
-            "node": "Greeting Gate",
+            "node": "If1",
             "type": "main",
             "index": 0
           }
@@ -463,22 +556,6 @@
         ]
       ]
     },
-    "Send a text message": {
-      "main": [
-        []
-      ]
-    },
-    "Execute a command": {
-      "main": [
-        [
-          {
-            "node": "Send a text message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Greeting Gate": {
       "main": [
         [
@@ -507,6 +584,57 @@
           }
         ]
       ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Execute a command1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a command1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Greeting Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a command4": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -514,7 +642,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ac5df880-cfdb-461c-9553-e4d2e03c4e11",
+  "versionId": "8d376f00-7d2d-4aac-b140-e73098e1ed7d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1c35b97225c8a39e55318cc23e58ce05625d02597a117f9c4d9642ef7a88e98c"

@@ -37,14 +37,30 @@ No infrastructure costs (runs on your own machine)
 
 ---
 
+## 🧠 Agent Execution Model
+
+This system no longer relies on predefined actions.
+
+### How it works:
+
+1. User sends a message via Telegram
+2. n8n receives the message
+3. The AI agent (Ollama) interprets the request
+4. The agent generates a **Bash command dynamically**
+5. The command is executed via SSH on the host machine
+6. The result is returned to the user
+7. Memory is updated for future context
+
+---
+
 ## 🏗️ Architecture
 
 ```text
 Telegram → n8n → AI Agent (Ollama)
                  ↓
-              Decision
+              Dynamic command
                  ↓
-            SSH → Host → Scripts
+            SSH → Host → Execution
 ```
 
 ---
@@ -70,6 +86,25 @@ Internet → DuckDNS → Router → Nginx Proxy Manager → Docker Network → n
 
   * HTTPS termination (Let's Encrypt)
   * Routes traffic to internal services
+
+---
+
+## 💾 Memory System
+
+The agent maintains persistent state in:
+
+n8n/memory/agent-memory.json
+Example:
+{
+  "last_app": "studio_one",
+  "last_action": "open",
+  "status": "open",
+  "mode": "normal"
+}
+Purpose:
+Avoid redundant actions
+Maintain context between interactions
+Enable smarter decision-making
 
 ---
 
