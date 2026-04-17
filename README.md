@@ -215,7 +215,134 @@ WEBHOOK_URL=https://your-domain.duckdns.org
 ### 3. Run services
 
 ```bash
+# Opción 1: Usar script de facilidad (recomendado)
+./scripts/start-stack.sh
+
+# Opción 2: Manual con docker compose
+cd docker
 docker compose up -d
+```
+
+**El script `start-stack.sh` automáticamente:**
+- ✅ Inicia los contenedores n8n, Ollama, Nginx
+- ✅ Descarga los modelos de Ollama configurados
+- ✅ Valida que todos los servicios estén listos
+
+---
+
+## 🤖 Configuración de Ollama
+
+### Modelos Soportados
+
+El proyecto está configurado para usar **Qwen2.5-Coder:7B** (optimizado para código y arquitectura).
+
+| Modelo | Tamaño | VRAM Requerido | Recomendado |
+|--------|--------|---|---|
+| `qwen2.5-coder:7b` | 7B | ~5GB | ✅ SÍ (ACTUAL) |
+| `qwen2.5:7b` | 7B | ~5GB | ❌ General |
+| `qwen2.5:14b` | 14B | ~8-9GB | ⚠️ Si tienes mucha VRAM |
+
+### Cambiar de Modelo
+
+**1. Editar configuración:**
+
+```bash
+# Editar docker/ollama.env
+# Cambiar OLLAMA_MODELS=qwen2.5-coder:7b
+# A: OLLAMA_MODELS=qwen2.5:14b (o el modelo que prefieras)
+```
+
+**2. Reiniciar servicios:**
+
+```bash
+cd docker
+docker compose down
+docker compose up -d
+
+# El nuevo modelo se descargará automáticamente
+```
+
+**3. Verificar modelo activo:**
+
+```bash
+docker exec ollama ollama list
+```
+
+### Descargar Modelo Manualmente
+
+```bash
+# Dentro del contenedor
+docker exec ollama ollama pull qwen2.5-coder:7b
+
+# O desde el host (si ollama está instalado)
+ollama pull qwen2.5-coder:7b
+```
+
+---
+
+## 🔄 Autostart en Boot (Linux)
+
+Para que la stack inicie automáticamente cuando enciendas la PC:
+
+### Instalación del Servicio Systemd
+
+```bash
+# 1. Copiar el archivo del servicio
+sudo cp home-automation-agent.service /etc/systemd/system/
+
+# 2. Recargar systemd
+sudo systemctl daemon-reload
+
+# 3. Habilitar el servicio
+sudo systemctl enable home-automation-agent
+
+# 4. Iniciar ahora (opcional)
+sudo systemctl start home-automation-agent
+
+# 5. Verificar estado
+sudo systemctl status home-automation-agent
+```
+
+### Verificar Logs del Servicio
+
+```bash
+# Ver logs en tiempo real
+sudo journalctl -u home-automation-agent -f
+
+# Ver últimos 50 logs
+sudo journalctl -u home-automation-agent -n 50
+```
+
+### Detener/Reiniciar el Servicio
+
+```bash
+# Detener
+sudo systemctl stop home-automation-agent
+
+# Reiniciar
+sudo systemctl restart home-automation-agent
+
+# Deshabilitar autostart
+sudo systemctl disable home-automation-agent
+```
+
+---
+
+## 📁 Estructura de Configuración
+
+```
+docker/
+├── docker-compose.yml      # Orquestación de contenedores
+├── ollama.env              # Configuración de modelos
+├── ollama-entrypoint.sh    # Script para descargar modelos
+├── Dockerfile.n8n          # Imagen personalizada de n8n
+└── .env                    # Credenciales locales (gitignored)
+
+scripts/
+├── start-stack.sh          # Script para iniciar la stack
+└── init-ollama-models.sh   # Script para descargar modelos
+
+home-automation-agent.service  # Servicio systemd para autostart
 ```
 
 ---
@@ -249,21 +376,28 @@ N8N_BASIC_AUTH_PASSWORD=<your-secure-password>
 
 **Step-by-step authentication:**
 
-1. Open n8n workflow UI at `http://localhost:3456`
-2. Create or edit a credential for **"Alexa Remote account"**
-3. Click the **"Authenticate"** button in the Connection tab
-4. A browser window will open for Amazon login
-5. Complete login with your **Amazon account** credentials
-6. Grant access permissions when prompted
-7. The system will automatically save authentication cookies to:
+1. En n8n UI, abre la credencial **"Alexa Remote account"**
+2. Asegúrate que el Proxy IP sea `192.168.1.70` y Proxy Port `3456`
+3. Haz click en **"Retry"** / guardar — esto inicia el proxy interno
+4. Abre tu navegador y ve a **`http://192.168.1.70:3456`**
+5. Te redirigirá a Amazon — inicia sesión con tu cuenta de Amazon
+6. Las cookies se guardan automáticamente en:
    ```
-   /home/ony/.n8n/alexa-cookie.json
+   /home/node/.n8n/.alexa-cookie.json
    ```
+7. La credencial aparecerá como conectada
+
+**Requisito:** El puerto `3456` debe estar expuesto en `docker-compose.yml`:
+```yaml
+ports:
+  - "127.0.0.1:5678:5678"
+  - "192.168.1.70:3456:3456"
+```
 
 **Troubleshooting:**
-- If cookies file is not created: Click **Retry** after authentication
-- If connection fails: Ensure your Amazon account doesn't have 2FA or disable it temporarily
-- Cookie path: `docker/.env` volume mounts `/home/ony/.n8n` for persistence
+- Si el proxy no responde: reinicia el container n8n y reintenta
+- Si falla la conexión: verifica que Amazon no tenga 2FA activo o desactívalo temporalmente
+- Cookie path en el container: `/home/node/.n8n/.alexa-cookie.json`
 
 #### Available Actions
 

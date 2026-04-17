@@ -1,0 +1,19 @@
+[Unit]
+Description=Home Automation Agent Stack (n8n + Ollama + Nginx)
+Documentation=https://github.com/Xtrangek/home-automation-agent
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ony
+WorkingDirectory=/mnt/agentsdisk/Projex/home-automation-agent
+ExecStart=/mnt/agentsdisk/Projex/home-automation-agent/scripts/start-stack.sh
+RemainAfterExit=yes
+
+# Reintentar si falla
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

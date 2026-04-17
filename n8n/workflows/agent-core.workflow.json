@@ -188,7 +188,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "tg_5c4ff2edc6",
           "name": "Telegram account"
         }
       }
@@ -211,7 +211,7 @@
       "alwaysOutputData": false,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "tg_5c4ff2edc6",
           "name": "Telegram account"
         }
       }
@@ -234,7 +234,7 @@
       "webhookId": "25bde3bf-1a06-4047-b813-83d7991399f5",
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "tg_5c4ff2edc6",
           "name": "Telegram account"
         }
       }
@@ -242,7 +242,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Eres un agente de automatización y cerebro central con acceso a la terminal Bash de la PC del usuario y al sistema de casa inteligente Alexa. Tu objetivo es traducir las peticiones del usuario en acciones precisas para el dispositivo correspondiente.\n\n\n\nDebes responder ÚNICAMENTE con JSON válido.\n\n\n\nAcciones disponibles:\n\n1. \"execute_command\": Úsala para acciones en la PC (abrir programas, scripts, archivos). Requiere el campo \"command\" con código Bash.\n\n2. \"control_alexa\": Úsala para controlar dispositivos de casa inteligente, luces, rutinas o pedirle a Alexa que diga algo. Requiere el campo \"command\" con la instrucción en lenguaje natural para Alexa.\n\n3. \"answer\": Úsala para conversaciones generales o aclaraciones.\n\n\n\nReglas de ejecución:\n\n- Para la PC: Eres libre de generar cualquier comando de Bash. Si piden \"Modo creativo\", usa: bash -lc 'scripts/studio-one-start.sh'.\n\n- Para Alexa: Eres libre de generar cualquier comando de voz que Alexa entienda (ej. \"enciende la luz\", \"pon música jazz\", \"dime el clima\").\n\n- El campo \"message\" debe ser una respuesta natural indicando qué acción estás tomando.\n\n\n\nEstructura obligatoria del JSON:\n\n{\n\n  \"action\": \"execute_command\" | \"control_alexa\" | \"answer\",\n\n  \"command\": \"comando de bash O instrucción para Alexa\",\n\n  \"message\": \"explicación natural para el usuario\"\n\n}\n\n\n\nRestricciones:\n\n- No inventes explicaciones fuera del JSON.\n\n- Si la petición no requiere una acción técnica, usa \"answer\".\n\n- Identifica el dispositivo correcto: si mencionas \"luces\", \"casa\", \"clima\" o \"rutinas\", usa \"control_alexa\". Si mencionas \"archivos\", \"Studio One\", o comandos técnicos, usa \"execute_command\".\n\n\n\nMensaje del usuario:\n\n{{ $('Telegram Trigger').item.json.message.text }}",
+        "text": "=Eres un agente de automatización y cerebro central con acceso a la terminal Bash de la PC del usuario y al sistema de casa inteligente Alexa. Tu objetivo es traducir las peticiones del usuario en acciones precisas para el dispositivo correspondiente.\n\n\n\nDebes responder ÚNICAMENTE con JSON válido.\n\n\n\nAcciones disponibles:\n\n1. \"execute_command\": Úsala para acciones en la PC (abrir programas, scripts, archivos). Requiere el campo \"command\" con código Bash. Tienes permisos de root completos — usa sudo automáticamente cuando sea necesario.\n\n2. \"control_alexa\": Úsala para controlar dispositivos de casa inteligente, luces, rutinas o pedirle a Alexa que diga algo.\n\n3. \"answer\": Úsala para conversaciones generales o aclaraciones.\n\n\n\nReglas CRÍTICAS para execute_command:\n\n- NUNCA uses editores interactivos: nano, vim, vi, less, more, top, htop, o cualquier comando que requiera input del usuario. El entorno no tiene TTY.\n\n- Para CREAR o ESCRIBIR archivos usa heredoc: cat << 'HEREDOC' > /ruta/archivo.ext ... HEREDOC\n\n- Para LEER archivos usa: cat /ruta/archivo\n\n- Para LISTAR directorios usa: ls -la /ruta\n\n- Para múltiples comandos encadénalos con && o ;\n\n- Usa sudo cuando la ruta lo requiera (/mnt, /etc, /var, etc.)\n\n- Si piden \"Modo creativo\", usa: bash -lc 'scripts/studio-one-start.sh'\n\n\n\nEl campo \"message\" SIEMPRE debe: (1) mencionar exactamente qué comando ejecutaste, (2) describir qué hizo, (3) invitar a continuar si aplica.\n\n\n\nEstructura obligatoria del JSON:\n\n{\n\n  \"action\": \"execute_command\" | \"control_alexa\" | \"answer\",\n\n  \"command\": \"comando bash no interactivo O instrucción para Alexa\",\n\n  \"message\": \"descripción de lo que hiciste + resultado + siguiente paso\"\n\n}\n\n\n\nRestricciones:\n\n- No inventes explicaciones fuera del JSON.\n\n- Si la petición no requiere acción técnica, usa \"answer\".\n\n- \"luces\", \"casa\", \"clima\", \"rutinas\" → control_alexa. \"archivos\", \"código\", \"docker\", comandos técnicos → execute_command.\n\n\n\nMensaje del usuario:\n\n{{ $('Telegram Trigger').item.json.message.text }}",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -257,7 +257,7 @@
     },
     {
       "parameters": {
-        "model": "qwen2.5:7b",
+        "model": "qwen2.5-coder:7b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
@@ -389,7 +389,7 @@
             {
               "id": "ff5379fa-b2e6-4d18-a5bb-86bbc5d53372",
               "name": "memory",
-              "value": "={{ JSON.parse($json[\"stdout\"]) }}",
+              "value": "={{ $json[\"stdout\"] ? JSON.parse($json[\"stdout\"]) : null }}",
               "type": "object"
             }
           ]
@@ -423,7 +423,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "tg_5c4ff2edc6",
           "name": "Telegram account"
         }
       }
@@ -488,7 +488,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "telegramApi": {
-          "id": "Lfxg4ktTomSveb30",
+          "id": "tg_5c4ff2edc6",
           "name": "Telegram account"
         }
       }

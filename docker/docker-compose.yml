@@ -16,8 +16,10 @@ services:
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
+      - N8N_PUSH_BACKEND=sse
     ports:
-      - "127.0.0.1:3456:3456"
+      - "127.0.0.1:5678:5678"
+      - "192.168.1.70:3456:3456"
     volumes:
       - /home/ony/agent-workspace:/files
       - /home/ony/.n8n:/home/node/.n8n
@@ -30,12 +32,15 @@ services:
   ollama:
     image: ollama/ollama
     container_name: ollama
+    env_file: ollama.env
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ollama:/root/.ollama
+      - /mnt/agentsdisk/Projex/home-automation-agent/docker/ollama-entrypoint.sh:/start.sh
+    entrypoint: /start.sh
     restart: unless-stopped
     networks:
       - proxy_net
