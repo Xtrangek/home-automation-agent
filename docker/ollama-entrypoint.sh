@@ -42,7 +42,7 @@ download_models() {
 }
 
 # Iniciar Ollama en background
-/ollama/bin/ollama serve &
+/usr/bin/ollama serve &
 OLLAMA_PID=$!
 
 # Descargar modelos
